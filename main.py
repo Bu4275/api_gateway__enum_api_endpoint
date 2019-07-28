@@ -5,7 +5,7 @@ from botocore.exceptions import ClientError
 
 module_info = {
     # Name of the module (should be the same as the filename)
-    'name': 'api_gateway__enum_apis',
+    'name': 'api_gateway__enum_api_endpoint',
 
     # Name and any other notes about the author
     'author': 'bu4275 @ bu472@gmail.com',
@@ -29,7 +29,7 @@ module_info = {
     'external_dependencies': [],
 
     # Module arguments to autocomplete when the user hits tab
-    'arguments_to_autocomplete': ['--versions-all', '--regions'],
+    'arguments_to_autocomplete': ['--regions'],
 }
 
 parser = argparse.ArgumentParser(add_help=False, description=module_info['description'])
@@ -71,11 +71,9 @@ def main(args, pacu_main):
     if args.regions:
         regions = args.regions.split(',')
     else:
-        regions = get_regions('Lambda')
+        regions = get_regions('apigateway')
 
-    lambda_data = {}
     summary_data = {}
-    lambda_data['Functions'] = []
     url = 'https://{restapi_id}.execute-api.{region}.amazonaws.com/{stage_name}{resource_path}'
 
     for region in regions:
@@ -87,7 +85,7 @@ def main(args, pacu_main):
             rest_ids = get_rest_api_id(client)
         except ClientError as e:
             if 'AccessDeniedException' in str(e):
-                print('AccessDeniedException')
+                print('AccessDeniedException: get_rest_api_id')
             continue
 
         if len(rest_ids) > 0:
@@ -98,10 +96,8 @@ def main(args, pacu_main):
                     resource_paths = get_resource_path(client, rest_id)
                 except ClientError as e:
                     if 'AccessDeniedException' in str(e):
-                        print('AccessDeniedException')
+                        print('AccessDeniedException: get_stage_names or get_resource_path')
                     continue
-
-                rest_ids[rest_id] += [stage_names, resource_paths]
 
             summary_data[region] = []
             for stage_name in stage_names:
@@ -114,10 +110,10 @@ def main(args, pacu_main):
 
 
 def summary(data, pacu_main):
-    r = ''
+    out = ''
     for region in data:
-        r += 'Region: %s\n' % region
+        out += 'Region: %s\n' % region
 
         for api in data[region]:
-            r += api + '\n'
-    return r
+            out += api + '\n'
+    return out
